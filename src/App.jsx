@@ -7,6 +7,7 @@ import {
   THEME_STORAGE_KEY,
   createWelcomeNotePayload,
   normalizeTag,
+  stripHtml,
 } from "./utils/noteHelpers";
 
 function loadInitialTheme() {
@@ -174,9 +175,10 @@ export default function App() {
         }
         if (!q) return true;
         const tagsText = (note.tags || []).join(" ").toLowerCase();
+        const plainBody = stripHtml(note.body).toLowerCase();
         return (
           note.title.toLowerCase().includes(q) ||
-          note.body.toLowerCase().includes(q) ||
+          plainBody.includes(q) ||
           tagsText.includes(q)
         );
       })
@@ -311,7 +313,8 @@ export default function App() {
       activeNote.tags && activeNote.tags.length > 0
         ? `태그: ${activeNote.tags.join(" ")}\n`
         : "";
-    const content = `${titleText}\n${tagsLine}${"=".repeat(24)}\n\n${activeNote.body}`;
+    const plainText = stripHtml(activeNote.body);
+    const content = `${titleText}\n${tagsLine}${"=".repeat(24)}\n\n${plainText}`;
 
     const safeName = titleText.replace(/[\\/:*?"<>|]/g, "_").slice(0, 60);
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -373,6 +376,7 @@ export default function App() {
 
       <Editor
         note={activeNote}
+        userId={session.user.id}
         saveStatus={notesLoading ? "메모 불러오는 중..." : saveStatus}
         onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         onUpdateNote={handleUpdateNote}

@@ -15,17 +15,48 @@ export function normalizeTag(raw) {
   return cleaned ? `#${cleaned}` : "";
 }
 
+export function stripHtml(html) {
+  if (!html) return "";
+  if (!/[<>]/.test(html)) return html;
+
+  const doc = new DOMParser().parseFromString(
+    html
+      .replace(/<\/(p|div|h[1-6]|li|blockquote)>/gi, "\n")
+      .replace(/<br\s*\/?>/gi, "\n"),
+    "text/html"
+  );
+  return (doc.body.textContent || "").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+export function normalizeEditorContent(rawBody) {
+  if (!rawBody) return "";
+  if (/<(p|div|h[1-6]|ul|ol|blockquote|img|strong|em|u|s|span)\b/i.test(rawBody)) {
+    return rawBody;
+  }
+  return rawBody
+    .split("\n")
+    .map((line) => `<p>${line ? escapeHtml(line) : "<br>"}</p>`)
+    .join("");
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 export function createWelcomeNotePayload() {
   return {
     title: "클라우드 동기화 웹 메모장에 오신 것을 환영합니다",
     body: [
-      "이제 작성한 메모가 Supabase 클라우드에 자동 저장됩니다.",
-      "",
-      "• PC와 스마트폰에서 같은 계정으로 로그인하면 메모가 동기화됩니다.",
-      "• 오른쪽 위 🌙 버튼을 눌러 다크 모드를 켜고 끌 수 있습니다.",
-      "• 아래 태그 입력창에 #업무, #아이디어 같은 태그를 추가해 보세요.",
-      "• 상단 ⬇️ .txt 버튼으로 현재 메모를 텍스트 파일로 내려받을 수 있습니다.",
-    ].join("\n"),
+      "<p>이제 작성한 메모가 <strong>Supabase 클라우드</strong>에 자동 저장됩니다.</p>",
+      "<ul>",
+      "<li><p>상단 툴바에서 <strong>글씨체</strong>, <strong>굵게</strong>, <u>밑줄</u>, <em>기울임</em> 등 서식을 바꿀 수 있습니다.</p></li>",
+      "<li><p><strong>🖼️ 사진</strong> 버튼(또는 이미지 붙여넣기)으로 사진을 자동 압축해 첨부할 수 있습니다.</p></li>",
+      "<li><p>PC와 스마트폰에서 같은 계정으로 로그인하면 메모가 동기화됩니다.</p></li>",
+      "</ul>",
+    ].join(""),
     tags: ["#안내", "#클라우드"],
     pinned: true,
   };

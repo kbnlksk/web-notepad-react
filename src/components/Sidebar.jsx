@@ -1,4 +1,4 @@
-import { formatDate } from "../utils/noteHelpers";
+import { formatDate, stripHtml } from "../utils/noteHelpers";
 
 export default function Sidebar({
   isOpen,
@@ -102,7 +102,7 @@ export default function Sidebar({
             </div>
 
             <div className="note-item-preview">
-              {note.body.trim().replace(/\n+/g, " ") || "내용 없음"}
+              {stripHtml(note.body).replace(/\n+/g, " ") || "내용 없음"}
             </div>
 
             {note.tags && note.tags.length > 0 && (

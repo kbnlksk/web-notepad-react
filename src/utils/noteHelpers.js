@@ -1,16 +1,61 @@
 export const THEME_STORAGE_KEY = "vibe_notepad_react_theme_v1";
 
 export const SGF_CATEGORIES = [
-  { id: "COMPANY", label: "COMPANY", sub: "기업·경영", desc: "기업소개 · 비전 · 연혁" },
-  { id: "BUSINESS", label: "BUSINESS", sub: "사업·유통", desc: "외식 · 가맹 · 육가공 · 제조" },
-  { id: "BRAND", label: "BRAND", sub: "브랜드·매장", desc: "산청 · 세광양대창 · 교대이층집" },
-  { id: "FRANCHISE", label: "FRANCHISE", sub: "가맹·창업", desc: "창업 절차 · 가맹 문의" },
-  { id: "COMMUNITY", label: "COMMUNITY", sub: "공지·소통", desc: "공지사항 · 일반 메모" },
+  {
+    id: "COMPANY",
+    label: "COMPANY",
+    sub: "기업·경영",
+    children: ["기업소개", "비전", "연혁", "오시는길"],
+  },
+  {
+    id: "BUSINESS",
+    label: "BUSINESS",
+    sub: "사업·유통",
+    children: ["외식사업", "가맹사업", "육가공 · 유통사업", "식품제조 · 가공사업"],
+  },
+  {
+    id: "BRAND",
+    label: "BRAND",
+    sub: "브랜드·매장",
+    children: [
+      "달맞이광장바베큐",
+      "산청숯불가든",
+      "석암생소금구이",
+      "세광양대창",
+      "교대이층집",
+      "오목집",
+      "교대갈비집",
+    ],
+  },
+  {
+    id: "FRANCHISE",
+    label: "FRANCHISE",
+    sub: "가맹·창업",
+    children: ["브랜드 소개", "창업 절차", "창업 문의"],
+  },
+  {
+    id: "COMMUNITY",
+    label: "COMMUNITY",
+    sub: "공지·소통",
+    children: ["공지사항", "고객의 소리", "매장 찾기"],
+  },
 ];
 
+export function parseCategory(raw) {
+  if (!raw) return { main: "COMMUNITY", sub: "" };
+  const [main, sub = ""] = String(raw).split("::");
+  return { main: main || "COMMUNITY", sub };
+}
+
+export function formatCategoryValue(main, sub = "") {
+  const safeMain = main || "COMMUNITY";
+  return sub ? `${safeMain}::${sub}` : safeMain;
+}
+
 export function getCategoryMeta(categoryId) {
+  const { main } = parseCategory(categoryId);
   return (
-    SGF_CATEGORIES.find((c) => c.id === categoryId) ||
+    SGF_CATEGORIES.find((c) => c.id === main) ||
     SGF_CATEGORIES[SGF_CATEGORIES.length - 1]
   );
 }

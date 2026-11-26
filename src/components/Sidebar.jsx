@@ -1,4 +1,10 @@
-import { SGF_CATEGORIES, formatDate, stripHtml } from "../utils/noteHelpers";
+import {
+  SGF_CATEGORIES,
+  formatDate,
+  getCategoryMeta,
+  parseCategory,
+  stripHtml,
+} from "../utils/noteHelpers";
 import BrandLogo from "./BrandLogo";
 
 export default function Sidebar({
@@ -18,14 +24,21 @@ export default function Sidebar({
   onSelectTagFilter,
   activeCategory,
   onSelectCategory,
+  activeSubCategory,
+  onSelectSubCategory,
   notes,
   totalCount,
   activeNoteId,
   onSelectNote,
 }) {
   const isFiltered = Boolean(
-    searchQuery.trim() || activeTagFilter || activeCategory !== "ALL"
+    searchQuery.trim() ||
+      activeTagFilter ||
+      activeCategory !== "ALL" ||
+      activeSubCategory
   );
+  const currentCatMeta =
+    activeCategory !== "ALL" ? getCategoryMeta(activeCategory) : null;
 
   return (
     <aside className={`sidebar${isOpen ? " open" : ""}`}>
@@ -100,6 +113,32 @@ export default function Sidebar({
         ))}
       </div>
 
+      {currentCatMeta && (
+        <div className="sidebar-subcategory-bar" aria-label="하위분류 필터">
+          <button
+            type="button"
+            className={`subcat-pill${!activeSubCategory ? " active" : ""}`}
+            onClick={() => onSelectSubCategory(null)}
+          >
+            전체
+          </button>
+          {currentCatMeta.children.map((child) => (
+            <button
+              key={child}
+              type="button"
+              className={`subcat-pill${
+                activeSubCategory === child ? " active" : ""
+              }`}
+              onClick={() =>
+                onSelectSubCategory(activeSubCategory === child ? null : child)
+              }
+            >
+              {child}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="search-box">
         <input
           type="search"
@@ -152,7 +191,10 @@ export default function Sidebar({
                 {note.title.trim() || "제목 없음"}
               </span>
               <span className="note-cat-badge">
-                {note.category || "COMMUNITY"}
+                {(() => {
+                  const { main, sub } = parseCategory(note.category);
+                  return sub ? `${main} · ${sub}` : main;
+                })()}
               </span>
               {note.pinned && <span className="pin-badge">고정</span>}
             </div>

@@ -2101,3 +2101,101 @@ textarea {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* ===== 세광그린푸드(sgfco.kr) 5열 메가메뉴 & 하위분류 필 ===== */
+.sgf-gnb-wrapper {
+  position: relative;
+}
+
+.sgf-mega-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 25;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  padding: 16px 8px;
+  background-color: var(--bg-editor);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeSlideUp 0.18s ease both;
+}
+
+.sgf-mega-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.sgf-mega-item {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.sgf-mega-item:hover {
+  color: var(--accent);
+  background-color: var(--bg-hover);
+}
+
+.sgf-mega-item.active {
+  color: var(--accent);
+  font-weight: 700;
+  background-color: var(--accent-soft);
+}
+
+.sidebar-subcategory-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 16px 10px;
+}
+
+.subcat-pill {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.subcat-pill:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.subcat-pill.active {
+  background-color: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+.category-select-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .sgf-mega-menu {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sgf-mega-spacer {
+    display: none;
+  }
+}

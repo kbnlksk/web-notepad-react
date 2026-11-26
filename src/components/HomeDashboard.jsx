@@ -3,6 +3,7 @@ import {
   SGF_CATEGORIES,
   formatDate,
   normalizeTag,
+  parseCategory,
   stripHtml,
 } from "../utils/noteHelpers";
 import BrandLogo from "./BrandLogo";
@@ -20,6 +21,7 @@ export default function HomeDashboard({
   onSelectTagFilter,
   activeCategory,
   onSelectCategory,
+  activeSubCategory,
   userEmail,
   onSelectNote,
   onCreateNote,
@@ -34,6 +36,7 @@ export default function HomeDashboard({
   const [quickBody, setQuickBody] = useState("");
   const [quickTags, setQuickTags] = useState("");
   const [quickSaving, setQuickSaving] = useState(false);
+  const [megaMenuOpen, setMegaMenuOpen] = useState(false);
 
   const pinnedNotes = useMemo(
     () => notes.filter((n) => n.pinned),
@@ -50,7 +53,11 @@ export default function HomeDashboard({
 
   const displayedNotes = useMemo(() => {
     return notes.filter((n) => {
-      if (activeCategory !== "ALL" && (n.category || "COMMUNITY") !== activeCategory) {
+      const { main, sub } = parseCategory(n.category);
+      if (activeCategory !== "ALL" && main !== activeCategory) {
+        return false;
+      }
+      if (activeSubCategory && sub !== activeSubCategory) {
         return false;
       }
       if (activeTagFilter && !(n.tags || []).includes(activeTagFilter)) {
@@ -58,7 +65,7 @@ export default function HomeDashboard({
       }
       return true;
     });
-  }, [notes, activeTagFilter, activeCategory]);
+  }, [notes, activeTagFilter, activeCategory, activeSubCategory]);
 
   const handleQuickSubmit = async (e) => {
     e.preventDefault();
@@ -125,37 +132,76 @@ export default function HomeDashboard({
       </header>
 
       <div className="dashboard-scroll">
-        {/* 세광그린푸드(sgfco.kr) 스타일 상단 5대 GNB 카테고리 바 */}
-        <nav className="sgf-gnb" aria-label="SGF 카테고리 메뉴">
-          <button
-            type="button"
-            className={`sgf-gnb-tab${activeCategory === "ALL" ? " active" : ""}`}
-            onClick={() => onSelectCategory("ALL")}
-          >
-            <span className="gnb-en">ALL</span>
-            <span className="gnb-ko">전체 ({notes.length})</span>
-          </button>
-          {SGF_CATEGORIES.map((cat) => {
-            const count = notes.filter(
-              (n) => (n.category || "COMMUNITY") === cat.id
-            ).length;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                className={`sgf-gnb-tab${activeCategory === cat.id ? " active" : ""}`}
-                onClick={() =>
-                  onSelectCategory(activeCategory === cat.id ? "ALL" : cat.id)
-                }
-              >
-                <span className="gnb-en">{cat.label}</span>
-                <span className="gnb-ko">
-                  {cat.sub} ({count})
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+        {/* 세광그린푸드(sgfco.kr) 스타일 상단 5대 GNB + 메가메뉴 드롭다운 */}
+        <div
+          className="sgf-gnb-wrapper"
+          onMouseEnter={() => setMegaMenuOpen(true)}
+          onMouseLeave={() => setMegaMenuOpen(false)}
+        >
+          <nav className="sgf-gnb" aria-label="SGF 카테고리 메뉴">
+            <button
+              type="button"
+              className={`sgf-gnb-tab${activeCategory === "ALL" ? " active" : ""}`}
+              onClick={() => onSelectCategory("ALL", null)}
+            >
+              <span className="gnb-en">ALL</span>
+              <span className="gnb-ko">전체 ({notes.length})</span>
+            </button>
+            {SGF_CATEGORIES.map((cat) => {
+              const count = notes.filter(
+                (n) => parseCategory(n.category).main === cat.id
+              ).length;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`sgf-gnb-tab${activeCategory === cat.id ? " active" : ""}`}
+                  onClick={() => {
+                    onSelectCategory(
+                      activeCategory === cat.id && !activeSubCategory
+                        ? "ALL"
+                        : cat.id,
+                      null
+                    );
+                    setMegaMenuOpen((prev) => !prev);
+                  }}
+                >
+                  <span className="gnb-en">{cat.label}</span>
+                  <span className="gnb-ko">
+                    {cat.sub} ({count})
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {megaMenuOpen && (
+            <div className="sgf-mega-menu" role="region" aria-label="하위분류 메뉴">
+              <div className="sgf-mega-spacer" />
+              {SGF_CATEGORIES.map((cat) => (
+                <div key={cat.id} className="sgf-mega-col">
+                  {cat.children.map((child) => {
+                    const isSubActive =
+                      activeCategory === cat.id && activeSubCategory === child;
+                    return (
+                      <button
+                        key={child}
+                        type="button"
+                        className={`sgf-mega-item${isSubActive ? " active" : ""}`}
+                        onClick={() => {
+                          onSelectCategory(cat.id, isSubActive ? null : child);
+                          setMegaMenuOpen(false);
+                        }}
+                      >
+                        {child}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* 상단 히어로 배너 */}
         <section className="dashboard-hero">

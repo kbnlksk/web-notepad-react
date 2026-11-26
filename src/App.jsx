@@ -12,7 +12,9 @@ import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import {
   THEME_STORAGE_KEY,
   createWelcomeNotePayload,
+  formatCategoryValue,
   normalizeTag,
+  parseCategory,
   stripHtml,
 } from "./utils/noteHelpers";
 
@@ -46,6 +48,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTagFilter, setActiveTagFilter] = useState(null);
   const [activeCategory, setActiveCategory] = useState("ALL");
+  const [activeSubCategory, setActiveSubCategory] = useState(null);
   const [saveStatus, setSaveStatus] = useState("클라우드 동기화됨");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewMode, setViewMode] = useState("editor"); // "editor" | "dashboard"
@@ -198,7 +201,11 @@ export default function App() {
     const q = searchQuery.trim().toLowerCase();
     return notes
       .filter((note) => {
-        if (activeCategory !== "ALL" && note.category !== activeCategory) {
+        const { main, sub } = parseCategory(note.category);
+        if (activeCategory !== "ALL" && main !== activeCategory) {
+          return false;
+        }
+        if (activeSubCategory && sub !== activeSubCategory) {
           return false;
         }
         if (activeTagFilter && !(note.tags || []).includes(activeTagFilter)) {
@@ -218,7 +225,7 @@ export default function App() {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
         return new Date(b.updatedAt) - new Date(a.updatedAt);
       });
-  }, [notes, searchQuery, activeTagFilter, activeCategory]);
+  }, [notes, searchQuery, activeTagFilter, activeCategory, activeSubCategory]);
 
   const activeNote = useMemo(
     () => notes.find((n) => n.id === activeNoteId) || null,
@@ -255,7 +262,10 @@ export default function App() {
     setSaveStatus("새 메모 생성 중...");
 
     const initialTags = activeTagFilter ? [activeTagFilter] : [];
-    const initialCategory = activeCategory !== "ALL" ? activeCategory : "COMMUNITY";
+    const initialCategory = formatCategoryValue(
+      activeCategory !== "ALL" ? activeCategory : "COMMUNITY",
+      activeSubCategory || ""
+    );
     const { data, error } = await supabase
       .from("notes")
       .insert({
@@ -293,7 +303,11 @@ export default function App() {
     if (!supabase || !session?.user?.id) return;
     setSaveStatus("빠른 메모 저장 중...");
     const targetCategory =
-      category || (activeCategory !== "ALL" ? activeCategory : "COMMUNITY");
+      category ||
+      formatCategoryValue(
+        activeCategory !== "ALL" ? activeCategory : "COMMUNITY",
+        activeSubCategory || ""
+      );
     const { data, error } = await supabase
       .from("notes")
       .insert({
@@ -504,7 +518,12 @@ export default function App() {
         activeTagFilter={activeTagFilter}
         onSelectTagFilter={setActiveTagFilter}
         activeCategory={activeCategory}
-        onSelectCategory={setActiveCategory}
+        onSelectCategory={(cat, sub = null) => {
+          setActiveCategory(cat);
+          setActiveSubCategory(sub);
+        }}
+        activeSubCategory={activeSubCategory}
+        onSelectSubCategory={setActiveSubCategory}
         notes={filteredNotes}
         totalCount={notes.length}
         activeNoteId={activeNoteId}
@@ -522,7 +541,11 @@ export default function App() {
           activeTagFilter={activeTagFilter}
           onSelectTagFilter={setActiveTagFilter}
           activeCategory={activeCategory}
-          onSelectCategory={setActiveCategory}
+          onSelectCategory={(cat, sub = null) => {
+            setActiveCategory(cat);
+            setActiveSubCategory(sub);
+          }}
+          activeSubCategory={activeSubCategory}
           userEmail={session.user.email}
           onSelectNote={(id) => {
             setActiveNoteId(id);

@@ -10,8 +10,11 @@ import Image from "@tiptap/extension-image";
 import { FontSize } from "../utils/fontSizeExtension";
 import {
   SGF_CATEGORIES,
+  formatCategoryValue,
   formatDate,
+  getCategoryMeta,
   normalizeEditorContent,
+  parseCategory,
   stripHtml,
 } from "../utils/noteHelpers";
 import {
@@ -334,18 +337,44 @@ export default function Editor({
             <span className="note-meta">
               마지막 수정: {formatDate(note.updatedAt)}
             </span>
-            <select
-              className="category-select"
-              value={note.category || "COMMUNITY"}
-              aria-label="카테고리 선택"
-              onChange={(e) => onUpdateNote({ category: e.target.value })}
-            >
-              {SGF_CATEGORIES.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.label} ({cat.sub})
-                </option>
-              ))}
-            </select>
+            <div className="category-select-group">
+              <select
+                className="category-select"
+                value={parseCategory(note.category).main}
+                aria-label="대분류 카테고리 선택"
+                onChange={(e) =>
+                  onUpdateNote({
+                    category: formatCategoryValue(e.target.value, ""),
+                  })
+                }
+              >
+                {SGF_CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.label} ({cat.sub})
+                  </option>
+                ))}
+              </select>
+              <select
+                className="category-select sub"
+                value={parseCategory(note.category).sub}
+                aria-label="하위분류 선택"
+                onChange={(e) =>
+                  onUpdateNote({
+                    category: formatCategoryValue(
+                      parseCategory(note.category).main,
+                      e.target.value
+                    ),
+                  })
+                }
+              >
+                <option value="">세부 분류 전체</option>
+                {getCategoryMeta(note.category).children.map((child) => (
+                  <option key={child} value={child}>
+                    {child}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="tag-editor">

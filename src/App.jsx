@@ -2,6 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
 import AuthView from "./components/AuthView";
+import HomeDashboard from "./components/HomeDashboard";
+import ShareModal, {
+  SharedNoteViewer,
+  decodeSharedNote,
+} from "./components/ShareModal";
+import InstallAppModal from "./components/InstallAppModal";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import {
   THEME_STORAGE_KEY,
@@ -40,8 +46,27 @@ export default function App() {
   const [activeTagFilter, setActiveTagFilter] = useState(null);
   const [saveStatus, setSaveStatus] = useState("클라우드 동기화됨");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [viewMode, setViewMode] = useState("editor"); // "editor" | "dashboard"
+  const [shareTargetNote, setShareTargetNote] = useState(null);
+  const [installModalOpen, setInstallModalOpen] = useState(false);
+  const [deferredPwaPrompt, setDeferredPwaPrompt] = useState(null);
+  const [sharedNoteFromUrl, setSharedNoteFromUrl] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get("share");
+    return encoded ? decodeSharedNote(encoded) : null;
+  });
 
   const saveTimersRef = useRef({});
+
+  // PWA 설치 이벤트(beforeinstallprompt) 캡처
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPwaPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
 
   // 다크 모드 동기화
   useEffect(() => {
@@ -249,10 +274,78 @@ export default function App() {
         prev.some((n) => n.id === created.id) ? prev : [created, ...prev]
       );
       setActiveNoteId(created.id);
+      setViewMode("editor");
       setSearchQuery("");
       setSidebarOpen(false);
       setSaveStatus("클라우드 동기화됨");
     }
+  };
+
+  const handleQuickCreateNote = async ({ title, body, tags }) => {
+    if (!supabase || !session?.user?.id) return;
+    setSaveStatus("빠른 메모 저장 중...");
+    const { data, error } = await supabase
+      .from("notes")
+      .insert({
+        user_id: session.user.id,
+        title: title || "",
+        body: body || "",
+        tags: Array.isArray(tags) ? tags : [],
+        pinned: false,
+      })
+      .select()
+      .single();
+
+    if (!error && data) {
+      const created = mapDbNote(data);
+      setNotes((prev) =>
+        prev.some((n) => n.id === created.id) ? prev : [created, ...prev]
+      );
+      setActiveNoteId(created.id);
+      setSaveStatus("클라우드 동기화됨");
+    }
+  };
+
+  const handleTogglePinByNote = (targetNote) => {
+    if (!targetNote) return;
+    const nextPinned = !targetNote.pinned;
+    const nowIso = new Date().toISOString();
+    setNotes((prev) =>
+      prev.map((n) =>
+        n.id === targetNote.id
+          ? { ...n, pinned: nextPinned, updatedAt: nowIso }
+          : n
+      )
+    );
+    persistPatchToDb(targetNote.id, { pinned: nextPinned });
+  };
+
+  const handleInstallAppClick = async () => {
+    if (deferredPwaPrompt) {
+      deferredPwaPrompt.prompt();
+      const choice = await deferredPwaPrompt.userChoice.catch(() => null);
+      if (choice?.outcome === "accepted") {
+        setDeferredPwaPrompt(null);
+        return;
+      }
+    }
+    setInstallModalOpen(true);
+  };
+
+  const handleImportSharedNote = async (shared) => {
+    if (!supabase || !session?.user?.id) {
+      alert("로그인 후 내 메모장에 저장할 수 있습니다.");
+      setSharedNoteFromUrl(null);
+      return;
+    }
+    await handleQuickCreateNote({
+      title: `[공유] ${shared.title || "제목 없음"}`,
+      body: shared.body || "",
+      tags: shared.tags || [],
+    });
+    window.history.replaceState({}, "", window.location.pathname);
+    setSharedNoteFromUrl(null);
+    setViewMode("editor");
   };
 
   const handleUpdateNote = (patch) => {
@@ -349,6 +442,19 @@ export default function App() {
     await supabase.auth.signOut();
   };
 
+  if (sharedNoteFromUrl) {
+    return (
+      <SharedNoteViewer
+        sharedNote={sharedNoteFromUrl}
+        onCloseShared={() => {
+          window.history.replaceState({}, "", window.location.pathname);
+          setSharedNoteFromUrl(null);
+        }}
+        onImportShared={session?.user?.id ? handleImportSharedNote : null}
+      />
+    );
+  }
+
   if (authLoading) {
     return (
       <div className="auth-page">
@@ -375,6 +481,12 @@ export default function App() {
         onLogout={handleLogout}
         onToggleTheme={() => setIsDark((prev) => !prev)}
         onCreateNote={handleCreateNote}
+        viewMode={viewMode}
+        onOpenDashboard={() => {
+          setViewMode("dashboard");
+          setSidebarOpen(false);
+        }}
+        onInstallApp={handleInstallAppClick}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         allTags={allTags}
@@ -385,25 +497,65 @@ export default function App() {
         activeNoteId={activeNoteId}
         onSelectNote={(id) => {
           setActiveNoteId(id);
+          setViewMode("editor");
           setSidebarOpen(false);
         }}
       />
 
-      <Editor
-        note={activeNote}
-        userId={session.user.id}
-        saveStatus={notesLoading ? "메모 불러오는 중..." : saveStatus}
-        onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
-        onUpdateNote={handleUpdateNote}
-        onAddTag={handleAddTag}
-        onRemoveTag={handleRemoveTag}
-        onAddAttachment={handleAddAttachment}
-        onRemoveAttachment={handleRemoveAttachment}
-        onTogglePin={handleTogglePin}
-        onDeleteNote={handleDeleteNote}
-        onDownloadNote={handleDownloadNote}
-        onCreateNote={handleCreateNote}
-      />
+      {viewMode === "dashboard" ? (
+        <HomeDashboard
+          notes={notes}
+          allTags={allTags}
+          activeTagFilter={activeTagFilter}
+          onSelectTagFilter={setActiveTagFilter}
+          userEmail={session.user.email}
+          onSelectNote={(id) => {
+            setActiveNoteId(id);
+            setViewMode("editor");
+          }}
+          onCreateNote={handleCreateNote}
+          onQuickCreateNote={handleQuickCreateNote}
+          onShareNote={(note) => setShareTargetNote(note)}
+          onTogglePinNote={handleTogglePinByNote}
+          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+          onInstallApp={handleInstallAppClick}
+          canInstallPwa={Boolean(deferredPwaPrompt)}
+        />
+      ) : (
+        <Editor
+          note={activeNote}
+          userId={session.user.id}
+          saveStatus={notesLoading ? "메모 불러오는 중..." : saveStatus}
+          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+          onOpenDashboard={() => setViewMode("dashboard")}
+          onOpenShare={(note) => setShareTargetNote(note)}
+          onUpdateNote={handleUpdateNote}
+          onAddTag={handleAddTag}
+          onRemoveTag={handleRemoveTag}
+          onAddAttachment={handleAddAttachment}
+          onRemoveAttachment={handleRemoveAttachment}
+          onTogglePin={handleTogglePin}
+          onDeleteNote={handleDeleteNote}
+          onDownloadNote={handleDownloadNote}
+          onCreateNote={handleCreateNote}
+        />
+      )}
+
+      {shareTargetNote && (
+        <ShareModal
+          note={shareTargetNote}
+          onClose={() => setShareTargetNote(null)}
+          onDownloadTxt={handleDownloadNote}
+        />
+      )}
+
+      {installModalOpen && (
+        <InstallAppModal
+          onClose={() => setInstallModalOpen(false)}
+          onTriggerInstall={handleInstallAppClick}
+          canInstallPwa={Boolean(deferredPwaPrompt)}
+        />
+      )}
     </div>
   );
 }

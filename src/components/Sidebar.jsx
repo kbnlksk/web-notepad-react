@@ -5,9 +5,13 @@ export default function Sidebar({
   isOpen,
   isDark,
   userEmail,
+  onGoHome,
   onLogout,
   onToggleTheme,
   onCreateNote,
+  viewMode,
+  onOpenDashboard,
+  onInstallApp,
   searchQuery,
   onSearchChange,
   allTags,
@@ -23,7 +27,14 @@ export default function Sidebar({
   return (
     <aside className={`sidebar${isOpen ? " open" : ""}`}>
       <div className="sidebar-header">
-        <BrandLogo />
+        <div
+          className="brand-click-area"
+          onClick={onOpenDashboard}
+          title="홈 대시보드로 이동"
+          style={{ cursor: "pointer" }}
+        >
+          <BrandLogo />
+        </div>
         <div className="header-actions">
           <button
             type="button"
@@ -43,6 +54,24 @@ export default function Sidebar({
             + 새 메모
           </button>
         </div>
+      </div>
+
+      <div className="sidebar-nav-tabs">
+        <button
+          type="button"
+          className={`sidebar-nav-btn${viewMode === "dashboard" ? " active" : ""}`}
+          onClick={onOpenDashboard}
+        >
+          🏠 홈 대시보드
+        </button>
+        <button
+          type="button"
+          className="sidebar-nav-btn"
+          onClick={onInstallApp}
+          title="PC/스마트폰 앱으로 설치"
+        >
+          📲 앱 설치
+        </button>
       </div>
 
       <div className="search-box">
@@ -87,7 +116,9 @@ export default function Sidebar({
         {notes.map((note) => (
           <li
             key={note.id}
-            className={`note-item${note.id === activeNoteId ? " active" : ""}`}
+            className={`note-item${
+              viewMode === "editor" && note.id === activeNoteId ? " active" : ""
+            }`}
             onClick={() => onSelectNote(note.id)}
           >
             <div className="note-item-top">

@@ -4,7 +4,10 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import { TextStyle } from "@tiptap/extension-text-style";
 import FontFamily from "@tiptap/extension-font-family";
+import { Color } from "@tiptap/extension-color";
+import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
+import { FontSize } from "../utils/fontSizeExtension";
 import {
   formatDate,
   normalizeEditorContent,
@@ -15,6 +18,8 @@ import {
   uploadNoteFile,
   uploadNoteImage,
 } from "../utils/imageUpload";
+import { copyTextToClipboard, encodeSharePayload } from "../utils/shareNote";
+import Dashboard from "./Dashboard";
 
 const FONT_OPTIONS = [
   { label: "기본 고딕", value: "" },
@@ -23,11 +28,31 @@ const FONT_OPTIONS = [
   { label: "고정폭 (코드)", value: '"Consolas", "Courier New", monospace' },
 ];
 
+const FONT_SIZE_OPTIONS = [
+  { label: "크기 (기본)", value: "" },
+  { label: "12px", value: "12px" },
+  { label: "14px", value: "14px" },
+  { label: "16px", value: "16px" },
+  { label: "18px", value: "18px" },
+  { label: "20px", value: "20px" },
+  { label: "24px", value: "24px" },
+  { label: "28px", value: "28px" },
+];
+
+const HIGHLIGHT_OPTIONS = [
+  { label: "노랑", color: "#fef08a" },
+  { label: "민트", color: "#99f6e4" },
+  { label: "핑크", color: "#fbcfe8" },
+  { label: "하늘", color: "#bae6fd" },
+];
+
 export default function Editor({
   note,
   userId,
   saveStatus,
   onToggleSidebar,
+  onOpenDashboard,
+  onOpenShare,
   onUpdateNote,
   onAddTag,
   onRemoveTag,
@@ -41,6 +66,8 @@ export default function Editor({
   const [tagInput, setTagInput] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState("");
   const fileInputRef = useRef(null);
   const attachmentInputRef = useRef(null);
   const activeNoteIdRef = useRef(note?.id ?? null);
@@ -54,6 +81,9 @@ export default function Editor({
       Underline,
       TextStyle,
       FontFamily,
+      FontSize,
+      Color,
+      Highlight.configure({ multicolor: true }),
       Image.configure({
         HTMLAttributes: {
           class: "note-inline-image",
@@ -98,7 +128,11 @@ export default function Editor({
     },
   });
 
-  // 다른 메모로 전환하거나 외부 실시간 변경이 들어올 때 에디터 내용 동기화
+  useEffect(() => {
+    setShareMenuOpen(false);
+    setShareFeedback("");
+  }, [note?.id]);
+
   useEffect(() => {
     if (!editor) return;
     const nextId = note?.id ?? null;
@@ -164,7 +198,48 @@ export default function Editor({
     }
   };
 
+  const showShareToast = (msg) => {
+    setShareFeedback(msg);
+    setShareMenuOpen(false);
+    setTimeout(() => setShareFeedback(""), 2500);
+  };
+
+  const handleNativeShare = async () => {
+    if (!note) return;
+    const title = note.title.trim() || "SGF 메모";
+    const text = stripHtml(note.body);
+    const shareUrl = `${window.location.origin}/#share=${encodeSharePayload(note)}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url: shareUrl });
+        showShareToast("공유 완료");
+        return;
+      } catch (err) {
+        if (err.name === "AbortError") return;
+      }
+    }
+    await copyTextToClipboard(`${title}\n\n${text}\n\n${shareUrl}`);
+    showShareToast("공유 내용 복사됨");
+  };
+
+  const handleCopyBody = async () => {
+    if (!note) return;
+    const title = note.title.trim() || "제목 없음";
+    await copyTextToClipboard(`${title}\n\n${stripHtml(note.body)}`);
+    showShareToast("본문 복사됨");
+  };
+
+  const handleCopyShareLink = async () => {
+    if (!note) return;
+    const shareUrl = `${window.location.origin}/#share=${encodeSharePayload(note)}`;
+    await copyTextToClipboard(shareUrl);
+    showShareToast("공유 링크 복사됨");
+  };
+
   const currentFont = editor?.getAttributes("textStyle")?.fontFamily || "";
+  const currentFontSize = editor?.getAttributes("textStyle")?.fontSize || "";
+  const currentColor = editor?.getAttributes("textStyle")?.color || "#181a1f";
   const charLength = note ? stripHtml(note.body).length : 0;
 
   return (
@@ -180,20 +255,42 @@ export default function Editor({
           >
             ☰
           </button>
+          <button
+            type="button"
+            className="ghost-btn home-btn"
+            onClick={onOpenDashboard}
+            title="메인 대시보드"
+          >
+            🏠 홈
+          </button>
           <span className="save-status">
-            {uploadingImage
-              ? "사진 압축·업로드 중..."
-              : uploadingFile
-                ? "파일 업로드 중..."
-                : note
-                  ? saveStatus
-                  : ""}
+            {shareFeedback
+              ? `✅ ${shareFeedback}`
+              : uploadingImage
+                ? "사진 압축·업로드 중..."
+                : uploadingFile
+                  ? "파일 업로드 중..."
+                  : note
+                    ? saveStatus
+                    : ""}
           </span>
         </div>
 
         {note && (
           <div className="toolbar-right">
             <span className="char-count">{charLength}자</span>
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() =>
+                onOpenShare
+                  ? onOpenShare(note)
+                  : setShareMenuOpen((prev) => !prev)
+              }
+              title="메모 공유하기"
+            >
+              📤 공유
+            </button>
             <button
               type="button"
               className="ghost-btn"
@@ -285,6 +382,26 @@ export default function Editor({
                 ))}
               </select>
 
+              <select
+                className="font-select"
+                value={currentFontSize}
+                aria-label="글자 크기 선택"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    editor.chain().focus().unsetFontSize().run();
+                  } else {
+                    editor.chain().focus().setFontSize(val).run();
+                  }
+                }}
+              >
+                {FONT_SIZE_OPTIONS.map((opt) => (
+                  <option key={opt.label} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+
               <span className="toolbar-divider" />
 
               <button
@@ -319,6 +436,51 @@ export default function Editor({
               >
                 <s>S</s>
               </button>
+
+              <span className="toolbar-divider" />
+
+              <label className="color-picker-btn" title="글자색 변경">
+                <span style={{ borderBottom: `3px solid ${currentColor}` }}>A</span>
+                <input
+                  type="color"
+                  value={currentColor}
+                  onChange={(e) =>
+                    editor.chain().focus().setColor(e.target.value).run()
+                  }
+                  aria-label="글자색 선택"
+                />
+              </label>
+
+              <div className="highlight-group" title="형광펜 배경색">
+                {HIGHLIGHT_OPTIONS.map((item) => (
+                  <button
+                    key={item.color}
+                    type="button"
+                    className={`highlight-dot${
+                      editor.isActive("highlight", { color: item.color })
+                        ? " active"
+                        : ""
+                    }`}
+                    style={{ backgroundColor: item.color }}
+                    title={`형광펜: ${item.label}`}
+                    onClick={() =>
+                      editor
+                        .chain()
+                        .focus()
+                        .toggleHighlight({ color: item.color })
+                        .run()
+                    }
+                  />
+                ))}
+                <button
+                  type="button"
+                  className="fmt-btn"
+                  onClick={() => editor.chain().focus().unsetHighlight().run()}
+                  title="형광펜 지우기"
+                >
+                  지움
+                </button>
+              </div>
 
               <span className="toolbar-divider" />
 
@@ -425,13 +587,22 @@ export default function Editor({
           <div className="empty-icon">✍️</div>
           <h2>선택된 메모가 없습니다</h2>
           <p>왼쪽 목록에서 메모를 선택하거나 새 메모를 만들어 보세요.</p>
-          <button
-            type="button"
-            className="primary-btn"
-            onClick={onCreateNote}
-          >
-            + 첫 메모 작성하기
-          </button>
+          <div className="toolbar-right">
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={onOpenDashboard}
+            >
+              🏠 대시보드 보기
+            </button>
+            <button
+              type="button"
+              className="primary-btn"
+              onClick={onCreateNote}
+            >
+              + 첫 메모 작성하기
+            </button>
+          </div>
         </section>
       )}
     </main>

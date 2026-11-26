@@ -22,6 +22,7 @@ function mapDbNote(row) {
     title: row.title || "",
     body: row.body || "",
     tags: Array.isArray(row.tags) ? row.tags : [],
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
     pinned: Boolean(row.pinned),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -293,6 +294,20 @@ export default function App() {
     handleUpdateNote({ pinned: !activeNote.pinned });
   };
 
+  const handleAddAttachment = (attachment) => {
+    if (!activeNote) return;
+    const current = activeNote.attachments || [];
+    handleUpdateNote({ attachments: [...current, attachment] });
+  };
+
+  const handleRemoveAttachment = (urlToRemove) => {
+    if (!activeNote) return;
+    const next = (activeNote.attachments || []).filter(
+      (att) => att.url !== urlToRemove
+    );
+    handleUpdateNote({ attachments: next });
+  };
+
   const handleDeleteNote = async () => {
     if (!activeNote || !supabase) return;
     const displayTitle = activeNote.title.trim() || "제목 없음";
@@ -382,6 +397,8 @@ export default function App() {
         onUpdateNote={handleUpdateNote}
         onAddTag={handleAddTag}
         onRemoveTag={handleRemoveTag}
+        onAddAttachment={handleAddAttachment}
+        onRemoveAttachment={handleRemoveAttachment}
         onTogglePin={handleTogglePin}
         onDeleteNote={handleDeleteNote}
         onDownloadNote={handleDownloadNote}

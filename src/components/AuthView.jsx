@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import BrandLogo from "./BrandLogo";
 
 export default function AuthView({ isDark, onToggleTheme }) {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -44,12 +45,7 @@ export default function AuthView({ isDark, onToggleTheme }) {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="brand">
-            <span className="brand-icon" aria-hidden="true">
-              📝
-            </span>
-            <h1>나만의 웹 메모장</h1>
-          </div>
+          <BrandLogo showSubtitle />
           <button
             type="button"
             className="icon-btn"

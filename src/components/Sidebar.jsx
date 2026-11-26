@@ -1,4 +1,5 @@
 import { formatDate, stripHtml } from "../utils/noteHelpers";
+import BrandLogo from "./BrandLogo";
 
 export default function Sidebar({
   isOpen,
@@ -22,12 +23,7 @@ export default function Sidebar({
   return (
     <aside className={`sidebar${isOpen ? " open" : ""}`}>
       <div className="sidebar-header">
-        <div className="brand">
-          <span className="brand-icon" aria-hidden="true">
-            📝
-          </span>
-          <h1>메모장</h1>
-        </div>
+        <BrandLogo />
         <div className="header-actions">
           <button
             type="button"

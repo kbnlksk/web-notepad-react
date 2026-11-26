@@ -10,7 +10,11 @@ import {
   normalizeEditorContent,
   stripHtml,
 } from "../utils/noteHelpers";
-import { uploadNoteImage } from "../utils/imageUpload";
+import {
+  formatFileSize,
+  uploadNoteFile,
+  uploadNoteImage,
+} from "../utils/imageUpload";
 
 const FONT_OPTIONS = [
   { label: "기본 고딕", value: "" },
@@ -27,6 +31,8 @@ export default function Editor({
   onUpdateNote,
   onAddTag,
   onRemoveTag,
+  onAddAttachment,
+  onRemoveAttachment,
   onTogglePin,
   onDeleteNote,
   onDownloadNote,
@@ -34,7 +40,9 @@ export default function Editor({
 }) {
   const [tagInput, setTagInput] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef(null);
+  const attachmentInputRef = useRef(null);
   const activeNoteIdRef = useRef(note?.id ?? null);
   const onUpdateNoteRef = useRef(onUpdateNote);
 
@@ -130,6 +138,22 @@ export default function Editor({
     }
   };
 
+  const handleAttachmentChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !userId) return;
+
+    setUploadingFile(true);
+    try {
+      const uploaded = await uploadNoteFile(file, userId);
+      onAddAttachment(uploaded);
+    } catch (err) {
+      alert(`파일 첨부 실패: ${err.message}`);
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
   const handleTagKeyDown = (e) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
@@ -157,7 +181,13 @@ export default function Editor({
             ☰
           </button>
           <span className="save-status">
-            {uploadingImage ? "사진 압축·업로드 중..." : note ? saveStatus : ""}
+            {uploadingImage
+              ? "사진 압축·업로드 중..."
+              : uploadingFile
+                ? "파일 업로드 중..."
+                : note
+                  ? saveStatus
+                  : ""}
           </span>
         </div>
 
@@ -335,6 +365,54 @@ export default function Editor({
                 className="hidden"
                 onChange={handleFileChange}
               />
+
+              <button
+                type="button"
+                className="fmt-btn image-btn"
+                disabled={uploadingFile}
+                onClick={() => attachmentInputRef.current?.click()}
+                title="PDF, 문서 등 파일 첨부 (최대 50MB)"
+              >
+                {uploadingFile ? "⏳ 첨부 중" : "📎 파일"}
+              </button>
+              <input
+                ref={attachmentInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.hwpx,.txt,.csv,.zip,image/*"
+                className="hidden"
+                onChange={handleAttachmentChange}
+              />
+            </div>
+          )}
+
+          {(note.attachments || []).length > 0 && (
+            <div className="attachments-bar" aria-label="첨부파일 목록">
+              {(note.attachments || []).map((att) => (
+                <div key={att.url} className="attachment-chip">
+                  <a
+                    href={att.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="attachment-link"
+                    title={`${att.name} 열기`}
+                  >
+                    <span>
+                      {att.type?.includes("pdf") ? "📄" : "📎"} {att.name}
+                    </span>
+                    <span className="attachment-size">
+                      ({formatFileSize(att.size)})
+                    </span>
+                  </a>
+                  <button
+                    type="button"
+                    className="tag-remove-btn"
+                    title="첨부파일 제거"
+                    onClick={() => onRemoveAttachment(att.url)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
             </div>
           )}
 

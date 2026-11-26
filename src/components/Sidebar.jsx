@@ -1,11 +1,10 @@
-import { formatDate, stripHtml } from "../utils/noteHelpers";
+import { SGF_CATEGORIES, formatDate, stripHtml } from "../utils/noteHelpers";
 import BrandLogo from "./BrandLogo";
 
 export default function Sidebar({
   isOpen,
   isDark,
   userEmail,
-  onGoHome,
   onLogout,
   onToggleTheme,
   onCreateNote,
@@ -17,12 +16,16 @@ export default function Sidebar({
   allTags,
   activeTagFilter,
   onSelectTagFilter,
+  activeCategory,
+  onSelectCategory,
   notes,
   totalCount,
   activeNoteId,
   onSelectNote,
 }) {
-  const isFiltered = Boolean(searchQuery.trim() || activeTagFilter);
+  const isFiltered = Boolean(
+    searchQuery.trim() || activeTagFilter || activeCategory !== "ALL"
+  );
 
   return (
     <aside className={`sidebar${isOpen ? " open" : ""}`}>
@@ -72,6 +75,29 @@ export default function Sidebar({
         >
           📲 앱 설치
         </button>
+      </div>
+
+      <div className="sidebar-category-bar" aria-label="카테고리 필터">
+        <button
+          type="button"
+          className={`cat-pill${activeCategory === "ALL" ? " active" : ""}`}
+          onClick={() => onSelectCategory("ALL")}
+        >
+          ALL
+        </button>
+        {SGF_CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            className={`cat-pill${activeCategory === cat.id ? " active" : ""}`}
+            onClick={() =>
+              onSelectCategory(activeCategory === cat.id ? "ALL" : cat.id)
+            }
+            title={cat.sub}
+          >
+            {cat.label}
+          </button>
+        ))}
       </div>
 
       <div className="search-box">
@@ -124,6 +150,9 @@ export default function Sidebar({
             <div className="note-item-top">
               <span className="note-item-title">
                 {note.title.trim() || "제목 없음"}
+              </span>
+              <span className="note-cat-badge">
+                {note.category || "COMMUNITY"}
               </span>
               {note.pinned && <span className="pin-badge">고정</span>}
             </div>

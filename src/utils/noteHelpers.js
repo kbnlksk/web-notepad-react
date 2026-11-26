@@ -1,5 +1,20 @@
 export const THEME_STORAGE_KEY = "vibe_notepad_react_theme_v1";
 
+export const SGF_CATEGORIES = [
+  { id: "COMPANY", label: "COMPANY", sub: "기업·경영", desc: "기업소개 · 비전 · 연혁" },
+  { id: "BUSINESS", label: "BUSINESS", sub: "사업·유통", desc: "외식 · 가맹 · 육가공 · 제조" },
+  { id: "BRAND", label: "BRAND", sub: "브랜드·매장", desc: "산청 · 세광양대창 · 교대이층집" },
+  { id: "FRANCHISE", label: "FRANCHISE", sub: "가맹·창업", desc: "창업 절차 · 가맹 문의" },
+  { id: "COMMUNITY", label: "COMMUNITY", sub: "공지·소통", desc: "공지사항 · 일반 메모" },
+];
+
+export function getCategoryMeta(categoryId) {
+  return (
+    SGF_CATEGORIES.find((c) => c.id === categoryId) ||
+    SGF_CATEGORIES[SGF_CATEGORIES.length - 1]
+  );
+}
+
 export function formatDate(timestamp) {
   if (!timestamp) return "";
   return new Date(timestamp).toLocaleString("ko-KR", {

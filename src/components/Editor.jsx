@@ -9,6 +9,7 @@ import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
 import { FontSize } from "../utils/fontSizeExtension";
 import {
+  SGF_CATEGORIES,
   formatDate,
   normalizeEditorContent,
   stripHtml,
@@ -329,8 +330,22 @@ export default function Editor({
             placeholder="제목을 입력하세요"
             aria-label="메모 제목"
           />
-          <div className="note-meta">
-            마지막 수정: {formatDate(note.updatedAt)}
+          <div className="note-meta-row">
+            <span className="note-meta">
+              마지막 수정: {formatDate(note.updatedAt)}
+            </span>
+            <select
+              className="category-select"
+              value={note.category || "COMMUNITY"}
+              aria-label="카테고리 선택"
+              onChange={(e) => onUpdateNote({ category: e.target.value })}
+            >
+              {SGF_CATEGORIES.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.label} ({cat.sub})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="tag-editor">

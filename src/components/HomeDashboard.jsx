@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
-import { formatDate, normalizeTag, stripHtml } from "../utils/noteHelpers";
+import {
+  SGF_CATEGORIES,
+  formatDate,
+  normalizeTag,
+  stripHtml,
+} from "../utils/noteHelpers";
 import BrandLogo from "./BrandLogo";
 
 function extractFirstImageUrl(html) {
@@ -13,6 +18,8 @@ export default function HomeDashboard({
   allTags,
   activeTagFilter,
   onSelectTagFilter,
+  activeCategory,
+  onSelectCategory,
   userEmail,
   onSelectNote,
   onCreateNote,
@@ -43,12 +50,15 @@ export default function HomeDashboard({
 
   const displayedNotes = useMemo(() => {
     return notes.filter((n) => {
+      if (activeCategory !== "ALL" && (n.category || "COMMUNITY") !== activeCategory) {
+        return false;
+      }
       if (activeTagFilter && !(n.tags || []).includes(activeTagFilter)) {
         return false;
       }
       return true;
     });
-  }, [notes, activeTagFilter]);
+  }, [notes, activeTagFilter, activeCategory]);
 
   const handleQuickSubmit = async (e) => {
     e.preventDefault();
@@ -115,6 +125,38 @@ export default function HomeDashboard({
       </header>
 
       <div className="dashboard-scroll">
+        {/* 세광그린푸드(sgfco.kr) 스타일 상단 5대 GNB 카테고리 바 */}
+        <nav className="sgf-gnb" aria-label="SGF 카테고리 메뉴">
+          <button
+            type="button"
+            className={`sgf-gnb-tab${activeCategory === "ALL" ? " active" : ""}`}
+            onClick={() => onSelectCategory("ALL")}
+          >
+            <span className="gnb-en">ALL</span>
+            <span className="gnb-ko">전체 ({notes.length})</span>
+          </button>
+          {SGF_CATEGORIES.map((cat) => {
+            const count = notes.filter(
+              (n) => (n.category || "COMMUNITY") === cat.id
+            ).length;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                className={`sgf-gnb-tab${activeCategory === cat.id ? " active" : ""}`}
+                onClick={() =>
+                  onSelectCategory(activeCategory === cat.id ? "ALL" : cat.id)
+                }
+              >
+                <span className="gnb-en">{cat.label}</span>
+                <span className="gnb-ko">
+                  {cat.sub} ({count})
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+
         {/* 상단 히어로 배너 */}
         <section className="dashboard-hero">
           <div className="hero-left">

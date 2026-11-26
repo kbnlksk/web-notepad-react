@@ -90,54 +90,32 @@ export default function Sidebar({
         </button>
       </div>
 
-      <div className="sidebar-category-bar" aria-label="카테고리 필터">
+      <div className="sidebar-category-bar" aria-label="COMMUNITY 하위분류">
+        <span className="sidebar-section-tag">COMMUNITY</span>
         <button
           type="button"
-          className={`cat-pill${activeCategory === "ALL" ? " active" : ""}`}
-          onClick={() => onSelectCategory("ALL")}
+          className={`subcat-pill${!activeSubCategory ? " active" : ""}`}
+          onClick={() => onSelectSubCategory(null)}
         >
-          ALL
+          전체
         </button>
-        {SGF_CATEGORIES.map((cat) => (
+        {(
+          SGF_CATEGORIES.find((c) => c.id === "COMMUNITY")?.children || []
+        ).map((child) => (
           <button
-            key={cat.id}
+            key={child}
             type="button"
-            className={`cat-pill${activeCategory === cat.id ? " active" : ""}`}
+            className={`subcat-pill${
+              activeSubCategory === child ? " active" : ""
+            }`}
             onClick={() =>
-              onSelectCategory(activeCategory === cat.id ? "ALL" : cat.id)
+              onSelectSubCategory(activeSubCategory === child ? null : child)
             }
-            title={cat.sub}
           >
-            {cat.label}
+            {child}
           </button>
         ))}
       </div>
-
-      {currentCatMeta && (
-        <div className="sidebar-subcategory-bar" aria-label="하위분류 필터">
-          <button
-            type="button"
-            className={`subcat-pill${!activeSubCategory ? " active" : ""}`}
-            onClick={() => onSelectSubCategory(null)}
-          >
-            전체
-          </button>
-          {currentCatMeta.children.map((child) => (
-            <button
-              key={child}
-              type="button"
-              className={`subcat-pill${
-                activeSubCategory === child ? " active" : ""
-              }`}
-              onClick={() =>
-                onSelectSubCategory(activeSubCategory === child ? null : child)
-              }
-            >
-              {child}
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="search-box">
         <input

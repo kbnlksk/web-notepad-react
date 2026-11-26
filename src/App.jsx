@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
 import AuthView from "./components/AuthView";
 import HomeDashboard from "./components/HomeDashboard";
+import PortalSectionView from "./components/PortalSectionView";
 import ShareModal, {
   SharedNoteViewer,
   decodeSharedNote,
@@ -51,7 +52,9 @@ export default function App() {
   const [activeSubCategory, setActiveSubCategory] = useState(null);
   const [saveStatus, setSaveStatus] = useState("클라우드 동기화됨");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [viewMode, setViewMode] = useState("editor"); // "editor" | "dashboard"
+  const [viewMode, setViewMode] = useState("dashboard"); // "dashboard" | "portal" | "community"
+  const [portalSection, setPortalSection] = useState("COMPANY");
+  const [portalSub, setPortalSub] = useState("기업소개");
   const [shareTargetNote, setShareTargetNote] = useState(null);
   const [installModalOpen, setInstallModalOpen] = useState(false);
   const [deferredPwaPrompt, setDeferredPwaPrompt] = useState(null);
@@ -292,7 +295,7 @@ export default function App() {
         prev.some((n) => n.id === created.id) ? prev : [created, ...prev]
       );
       setActiveNoteId(created.id);
-      setViewMode("editor");
+      setViewMode("community");
       setSearchQuery("");
       setSidebarOpen(false);
       setSaveStatus("클라우드 동기화됨");
@@ -497,86 +500,109 @@ export default function App() {
     );
   }
 
-  return (
-    <div className="app">
-      <Sidebar
-        isOpen={sidebarOpen}
-        isDark={isDark}
-        userEmail={session.user.email}
-        onLogout={handleLogout}
-        onToggleTheme={() => setIsDark((prev) => !prev)}
-        onCreateNote={handleCreateNote}
-        viewMode={viewMode}
-        onOpenDashboard={() => {
-          setViewMode("dashboard");
-          setSidebarOpen(false);
-        }}
-        onInstallApp={handleInstallAppClick}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        allTags={allTags}
-        activeTagFilter={activeTagFilter}
-        onSelectTagFilter={setActiveTagFilter}
-        activeCategory={activeCategory}
-        onSelectCategory={(cat, sub = null) => {
-          setActiveCategory(cat);
-          setActiveSubCategory(sub);
-        }}
-        activeSubCategory={activeSubCategory}
-        onSelectSubCategory={setActiveSubCategory}
-        notes={filteredNotes}
-        totalCount={notes.length}
-        activeNoteId={activeNoteId}
-        onSelectNote={(id) => {
-          setActiveNoteId(id);
-          setViewMode("editor");
-          setSidebarOpen(false);
-        }}
-      />
+  const handleNavigateSection = (section, sub = "") => {
+    setPortalSection(section);
+    setPortalSub(sub);
+    setViewMode("portal");
+  };
 
-      {viewMode === "dashboard" ? (
+  const handleOpenCommunityNotepad = (sub = null) => {
+    setActiveCategory("ALL");
+    setActiveSubCategory(sub);
+    setViewMode("community");
+    setSidebarOpen(false);
+  };
+
+  return (
+    <>
+      {viewMode === "dashboard" && (
         <HomeDashboard
           notes={notes}
-          allTags={allTags}
-          activeTagFilter={activeTagFilter}
-          onSelectTagFilter={setActiveTagFilter}
-          activeCategory={activeCategory}
-          onSelectCategory={(cat, sub = null) => {
-            setActiveCategory(cat);
-            setActiveSubCategory(sub);
-          }}
-          activeSubCategory={activeSubCategory}
           userEmail={session.user.email}
+          isDark={isDark}
+          canInstallPwa={Boolean(deferredPwaPrompt)}
+          onNavigateSection={handleNavigateSection}
+          onOpenCommunityNotepad={handleOpenCommunityNotepad}
           onSelectNote={(id) => {
             setActiveNoteId(id);
-            setViewMode("editor");
+            setViewMode("community");
           }}
           onCreateNote={handleCreateNote}
-          onQuickCreateNote={handleQuickCreateNote}
-          onShareNote={(note) => setShareTargetNote(note)}
-          onTogglePinNote={handleTogglePinByNote}
-          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+          onToggleTheme={() => setIsDark((prev) => !prev)}
           onInstallApp={handleInstallAppClick}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {viewMode === "portal" && (
+        <PortalSectionView
+          section={portalSection}
+          subSection={portalSub}
+          isDark={isDark}
           canInstallPwa={Boolean(deferredPwaPrompt)}
+          onGoHome={() => setViewMode("dashboard")}
+          onNavigateSection={handleNavigateSection}
+          onOpenCommunityNotepad={handleOpenCommunityNotepad}
+          onToggleTheme={() => setIsDark((prev) => !prev)}
+          onInstallApp={handleInstallAppClick}
+          onLogout={handleLogout}
         />
-      ) : (
-        <Editor
-          note={activeNote}
-          userId={session.user.id}
-          saveStatus={notesLoading ? "메모 불러오는 중..." : saveStatus}
-          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
-          onOpenDashboard={() => setViewMode("dashboard")}
-          onOpenShare={(note) => setShareTargetNote(note)}
-          onUpdateNote={handleUpdateNote}
-          onAddTag={handleAddTag}
-          onRemoveTag={handleRemoveTag}
-          onAddAttachment={handleAddAttachment}
-          onRemoveAttachment={handleRemoveAttachment}
-          onTogglePin={handleTogglePin}
-          onDeleteNote={handleDeleteNote}
-          onDownloadNote={handleDownloadNote}
-          onCreateNote={handleCreateNote}
-        />
+      )}
+
+      {viewMode === "community" && (
+        <div className="app">
+          <Sidebar
+            isOpen={sidebarOpen}
+            isDark={isDark}
+            userEmail={session.user.email}
+            onLogout={handleLogout}
+            onToggleTheme={() => setIsDark((prev) => !prev)}
+            onCreateNote={handleCreateNote}
+            viewMode="editor"
+            onOpenDashboard={() => {
+              setViewMode("dashboard");
+              setSidebarOpen(false);
+            }}
+            onInstallApp={handleInstallAppClick}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            allTags={allTags}
+            activeTagFilter={activeTagFilter}
+            onSelectTagFilter={setActiveTagFilter}
+            activeCategory={activeCategory}
+            onSelectCategory={(cat, sub = null) => {
+              setActiveCategory(cat);
+              setActiveSubCategory(sub);
+            }}
+            activeSubCategory={activeSubCategory}
+            onSelectSubCategory={setActiveSubCategory}
+            notes={filteredNotes}
+            totalCount={notes.length}
+            activeNoteId={activeNoteId}
+            onSelectNote={(id) => {
+              setActiveNoteId(id);
+              setSidebarOpen(false);
+            }}
+          />
+
+          <Editor
+            note={activeNote}
+            userId={session.user.id}
+            saveStatus={notesLoading ? "메모 불러오는 중..." : saveStatus}
+            onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+            onOpenDashboard={() => setViewMode("dashboard")}
+            onOpenShare={(note) => setShareTargetNote(note)}
+            onUpdateNote={handleUpdateNote}
+            onAddTag={handleAddTag}
+            onRemoveTag={handleRemoveTag}
+            onAddAttachment={handleAddAttachment}
+            onRemoveAttachment={handleRemoveAttachment}
+            onTogglePin={handleTogglePin}
+            onDeleteNote={handleDeleteNote}
+            onDownloadNote={handleDownloadNote}
+            onCreateNote={handleCreateNote}
+          />
+        </div>
       )}
 
       {shareTargetNote && (
@@ -594,6 +620,6 @@ export default function App() {
           canInstallPwa={Boolean(deferredPwaPrompt)}
         />
       )}
-    </div>
+    </>
   );
 }

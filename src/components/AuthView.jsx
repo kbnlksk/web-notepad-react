@@ -43,6 +43,9 @@ export default function AuthView({ isDark, onToggleTheme }) {
 
   return (
     <div className="auth-page">
+      <div className="auth-bg-orb orb-1" aria-hidden="true" />
+      <div className="auth-bg-orb orb-2" aria-hidden="true" />
+
       <div className="auth-card">
         <div className="auth-header">
           <BrandLogo showSubtitle />
@@ -55,6 +58,10 @@ export default function AuthView({ isDark, onToggleTheme }) {
           >
             {isDark ? "☀️" : "🌙"}
           </button>
+        </div>
+
+        <div className="auth-brand-slogan">
+          오늘을 더 의미있게, 내일을 더 특별하게
         </div>
 
         {!isSupabaseConfigured ? (

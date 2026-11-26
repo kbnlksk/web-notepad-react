@@ -12,15 +12,17 @@
   --text-muted: #9aa1ad;
 
   --border-color: #e6e8ee;
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
+  --accent: #009e9d;
+  --accent-hover: #008281;
+  --accent-soft: rgba(0, 158, 157, 0.1);
   --danger: #dc2626;
   --danger-bg: #fef2f2;
   --pin-bg: #fef3c7;
   --pin-text: #b45309;
 
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --radius-md: 10px;
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 18px 40px rgba(0, 158, 157, 0.09);
+  --radius-md: 12px;
   --radius-sm: 8px;
 }
 
@@ -29,7 +31,7 @@ body.dark {
   --bg-sidebar: #15181e;
   --bg-editor: #181b22;
   --bg-hover: #1f242d;
-  --bg-active: #232842;
+  --bg-active: #16292a;
   --bg-input: #1e222b;
 
   --text-primary: #f1f3f5;
@@ -37,14 +39,16 @@ body.dark {
   --text-muted: #6c7380;
 
   --border-color: #262b36;
-  --accent: #6366f1;
-  --accent-hover: #818cf8;
+  --accent: #14b8b6;
+  --accent-hover: #2dd4bf;
+  --accent-soft: rgba(20, 184, 182, 0.14);
   --danger: #f87171;
   --danger-bg: rgba(248, 113, 113, 0.12);
   --pin-bg: rgba(251, 191, 36, 0.15);
   --pin-text: #fbbf24;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.45);
 }
 
 /* ===== 기본 리셋 ===== */
@@ -207,16 +211,19 @@ textarea {
   border-radius: var(--radius-md);
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .note-item:hover {
   background-color: var(--bg-hover);
+  transform: translateX(3px);
 }
 
 .note-item.active {
-  background-color: var(--bg-active);
-  border-color: rgba(99, 102, 241, 0.25);
+  background-color: var(--accent-soft);
+  border-color: rgba(0, 158, 157, 0.35);
+  box-shadow: var(--shadow-sm);
 }
 
 .note-item-top {
@@ -792,43 +799,118 @@ textarea {
   box-shadow: var(--shadow-sm);
 }
 
-/* ===== SGF (Sekwang Green Food) 로고 & 파일 첨부 목록 ===== */
-.sgf-badge {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
-  color: #ffffff;
+/* ===== SGF (Sekwang Green Food) 공식 브랜드 로고 & 홈페이지형 애니메이션 ===== */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(16px, -18px) scale(1.06);
+  }
+}
+
+.sgf-symbol {
+  color: var(--accent);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.28);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.brand:hover .sgf-symbol {
+  transform: scale(1.08) rotate(-3deg);
 }
 
 .brand-text {
   display: flex;
   flex-direction: column;
-  line-height: 1.1;
+  line-height: 1.08;
 }
 
 .brand-sgf {
-  font-size: 1.18rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   color: var(--text-primary);
 }
 
 .brand-sub {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 600;
-  color: #16a34a;
+  color: var(--accent);
   letter-spacing: 0.02em;
   margin-top: 2px;
 }
 
-body.dark .brand-sub {
-  color: #4ade80;
+.auth-page {
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-bg-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(70px);
+  opacity: 0.24;
+  pointer-events: none;
+  animation: floatSlow 9s ease-in-out infinite;
+}
+
+.auth-bg-orb.orb-1 {
+  width: 340px;
+  height: 340px;
+  background: var(--accent);
+  top: -90px;
+  left: -80px;
+}
+
+.auth-bg-orb.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: #38bdf8;
+  bottom: -90px;
+  right: -70px;
+  animation-delay: -4.5s;
+}
+
+.auth-card {
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-lg);
+  animation: fadeSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-brand-slogan {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.editor-content {
+  animation: fadeSlideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.note-inline-image {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.note-inline-image:hover {
+  transform: scale(1.01);
 }
 
 .attachments-bar {

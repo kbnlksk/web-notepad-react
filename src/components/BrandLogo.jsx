@@ -1,26 +1,24 @@
-export default function BrandLogo({ showSubtitle = false }) {
+export default function BrandLogo({ showSubtitle = true }) {
   return (
     <div className="brand" title="Sekwang Green Food (세광그린푸드)">
-      <span className="sgf-badge" aria-hidden="true">
+      <span className="sgf-symbol" aria-hidden="true">
         <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
+          width="30"
+          height="30"
+          viewBox="0 0 36 36"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
+          {/* 큰 우상향 곡선 스우시 */}
           <path
-            d="M19.5 4.5C12.5 4.5 6.5 8.5 5.5 16.5C5.3 18 5.5 19.5 5.5 19.5C5.5 19.5 7 19.7 8.5 19.5C16.5 18.5 20.5 12.5 19.5 4.5Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            d="M5 25.5C9.5 14.5 18.5 8.5 31 6.5C23.5 11.5 17.5 17.5 13 26.5C10.5 26.8 7.5 26.4 5 25.5Z"
+            fill="currentColor"
           />
+          {/* 작은 보조 곡선 스우시 */}
           <path
-            d="M5.5 19.5C8.5 15.5 12 12 16.5 8.5"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
+            d="M15.5 28.5C19 20.5 24.5 15.5 31.5 13.5C27.5 17.5 24 22 21.5 28.5C19.5 29 17.5 29 15.5 28.5Z"
+            fill="currentColor"
+            opacity="0.72"
           />
         </svg>
       </span>
